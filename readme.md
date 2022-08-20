@@ -1,6 +1,6 @@
 # tcp-speed-rs
 
-Protocol and implementation of a program to measures internet speed.
+Protocol and implementation of a program to measure internet speed.
 
 ## Help
 
@@ -39,34 +39,31 @@ OPTIONS:
 $ RUST_LOG=debug cargo run --release --bin server -- -l 127.0.0.1:5000
     Finished release [optimized] target(s) in 0.04s
      Running `target/release/server -l '127.0.0.1:5000'`
-[2022-08-20T11:14:23Z INFO  server] TCP server listening 127.0.0.1:5000
-[2022-08-20T11:14:42Z DEBUG server] Incoming connection from 127.0.0.1:53570
-[2022-08-20T11:14:42Z DEBUG server] Read direction: 0
-[2022-08-20T11:14:42Z DEBUG server] Read size: 500000000
-[2022-08-20T11:14:58Z DEBUG server] Incoming connection from 127.0.0.1:50586
-[2022-08-20T11:14:58Z DEBUG server] Read direction: 1
-[2022-08-20T11:14:58Z DEBUG server] Read size: 500000000
+[2022-08-20T12:31:54Z INFO  server] TCP server listening 127.0.0.1:5000
+[2022-08-20T12:32:30Z DEBUG server] Incoming connection from 127.0.0.1:56302
+[2022-08-20T12:32:30Z DEBUG server] Read direction: 1
+[2022-08-20T12:32:30Z DEBUG server] Read size: 500002816
+[2022-08-20T12:32:30Z DEBUG server] Rounded payload size: 500002816
+[2022-08-20T12:32:38Z DEBUG server] Incoming connection from 127.0.0.1:54730
+[2022-08-20T12:32:38Z DEBUG server] Read direction: 0
+[2022-08-20T12:32:38Z DEBUG server] Read size: 500002816
+[2022-08-20T12:32:38Z DEBUG server] Rounded payload size: 500002816
 ```
 
 ## Example clients
 
 ```bash
-$ RUST_LOG=debug cargo run --release --bin client -- --remote-address 127.0.0.1:5000 --upload -s $((1000*1000*500))
-    Finished release [optimized] target(s) in 0.04s
-     Running `target/release/client --remote-address '127.0.0.1:5000' --upload -s 500000000`
-[2022-08-20T11:14:42Z INFO  client] Connected to 127.0.0.1:5000
-[2022-08-20T11:14:42Z DEBUG client] Sent direction byte: 0
-[2022-08-20T11:14:42Z DEBUG client] Sent size: 500000000
-[2022-08-20T11:14:52Z INFO  client] Duration = 9.421016808 s
-[2022-08-20T11:14:52Z INFO  client] Upload speed: 53.073 MB/s = 424.583 Mbit/s
-Time: 0h:00m:09s
+$ RUST_LOG=debug cargo run --release --bin client -- -r 127.0.0.1:5000 --download -s $((1000*1000*500))
+[2022-08-20T12:32:30Z INFO  client] Connected to 127.0.0.1:5000
+[2022-08-20T12:32:30Z DEBUG client] Sent direction byte: 1
+[2022-08-20T12:32:30Z DEBUG client] Sent size: 500002816
+[2022-08-20T12:32:30Z INFO  client] Duration = 0.147446081 s
+[2022-08-20T12:32:30Z INFO  client] Download speed: 3391.089 MB/s = 27128.714 Mbit/s
 
-$ RUST_LOG=debug cargo run --release --bin client -- --remote-address 127.0.0.1:5000 --download -s $((1000*1000*500))
-    Finished release [optimized] target(s) in 0.04s
-     Running `target/release/client --remote-address '127.0.0.1:5000' --download -s 500000000`
-[2022-08-20T11:14:58Z INFO  client] Connected to 127.0.0.1:5000
-[2022-08-20T11:14:58Z DEBUG client] Sent direction byte: 1
-[2022-08-20T11:14:58Z DEBUG client] Sent size: 500000000
-[2022-08-20T11:15:07Z INFO  client] Duration = 9.305957091 s
-[2022-08-20T11:15:07Z INFO  client] Download speed: 53.729 MB/s = 429.832 Mbit/s
+$ RUST_LOG=debug cargo run --release --bin client -- -r 127.0.0.1:5000 --upload -s $((1000*1000*500))
+[2022-08-20T12:32:38Z INFO  client] Connected to 127.0.0.1:5000
+[2022-08-20T12:32:38Z DEBUG client] Sent direction byte: 0
+[2022-08-20T12:32:38Z DEBUG client] Sent size: 500002816
+[2022-08-20T12:32:38Z INFO  client] Duration = 0.100174543 s
+[2022-08-20T12:32:38Z INFO  client] Upload speed: 4991.316 MB/s = 39930.529 Mbit/s
 ```
