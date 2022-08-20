@@ -71,14 +71,17 @@ async fn handle_client(
     log::debug!("Read direction: {}", direction.int_value());
     let size = buf_reader.read_u32().await.context("Failed to read size")?;
     log::debug!("Read size: {}", size);
+    let payload_size = tcp_speed_rs::next_multiple(size, protocol::PAYLOAD_BUF_SIZE);
+    log::debug!("Rounded payload size: {}", payload_size);
     match direction {
         protocol::Direction::UPLOAD => {
-            for _ in 0..size {
-                let c = buf_reader
-                    .read_u8()
+            for _ in 0..payload_size / protocol::PAYLOAD_BUF_SIZE {
+                let mut payload_buf = [0_u8; protocol::PAYLOAD_BUF_SIZE as usize];
+                buf_reader
+                    .read_exact(&mut payload_buf)
                     .await
                     .context("Failed to read data from client")?;
-                if c != protocol::PAYLOAD {
+                if payload_buf != protocol::PAYLOAD_BUF {
                     return Err(Box::new(ClientError::InvalidPayload));
                 }
             }
@@ -86,9 +89,9 @@ async fn handle_client(
         protocol::Direction::DOWNLOAD => {
             use tokio::io::AsyncWriteExt;
             let mut buf_writer = tokio::io::BufWriter::new(tcp_out);
-            for _ in 0..size {
+            for _ in 0..payload_size / protocol::PAYLOAD_BUF_SIZE {
                 buf_writer
-                    .write_u8(protocol::PAYLOAD)
+                    .write_all(&protocol::PAYLOAD_BUF)
                     .await
                     .context("Failed to write data to client")?;
             }

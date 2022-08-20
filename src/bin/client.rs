@@ -45,6 +45,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         protocol::Direction::UPLOAD
     };
 
+    let payload_size =
+        tcp_speed_rs::next_multiple(args.size, protocol::PAYLOAD_BUF_SIZE as u32);
+
     let socket;
     if args.remote_address.is_ipv4() {
         socket = tokio::net::TcpSocket::new_v4()
@@ -69,10 +72,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .context("Failed to write direction byte")?;
     log::debug!("Sent direction byte: {}", direction.int_value());
     buf_writer
-        .write_u32(args.size)
+        .write_u32(payload_size)
         .await
         .context("Failed to write size")?;
-    log::debug!("Sent size: {}", args.size);
+    log::debug!("Sent size: {}", payload_size);
     buf_writer.flush().await.context("Flush failed")?;
 
     let mut buf_reader = tokio::io::BufReader::new(tcp_in);
@@ -80,20 +83,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use tokio::io::AsyncReadExt;
     match direction {
         protocol::Direction::DOWNLOAD => {
-            for _ in 0..args.size {
-                let c = buf_reader
-                    .read_u8()
+            for _ in 0..payload_size / protocol::PAYLOAD_BUF_SIZE {
+                let mut payload_buf = [0_u8; protocol::PAYLOAD_BUF_SIZE as usize];
+                buf_reader
+                    .read_exact(&mut payload_buf)
                     .await
                     .context("Failed to read payload")?;
-                if c != protocol::PAYLOAD {
+                if payload_buf != protocol::PAYLOAD_BUF {
                     return Err(Box::new(ServerError::InvalidPayload).into());
                 }
             }
         }
         protocol::Direction::UPLOAD => {
-            for _ in 0..args.size {
+            for _ in 0..payload_size / protocol::PAYLOAD_BUF_SIZE {
                 buf_writer
-                    .write_u8(protocol::PAYLOAD)
+                    .write_all(&protocol::PAYLOAD_BUF)
                     .await
                     .context("Failed to write payload")?;
             }
@@ -105,7 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .context("Clock may have gone backwards")?
         .as_secs_f64();
     log::info!("Duration = {} s", duration);
-    let mb_s = (args.size as f64) / duration / 1000.0 / 1000.0;
+    let mb_s = (payload_size as f64) / duration / 1000.0 / 1000.0;
     let mbit_s = mb_s * 8.0;
     log::info!(
         "{} speed: {:.3} MB/s = {:.3} Mbit/s",
